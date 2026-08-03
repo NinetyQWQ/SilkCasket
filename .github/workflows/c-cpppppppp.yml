@@ -1,0 +1,41 @@
+name: Build for Android (NDK)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. 安装 Android NDK（包含交叉编译工具链）
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d        # 推荐使用较新稳定版
+          add-to-path: true
+
+      # 2. 配置 CMake，指定目标为 Android ARM64
+      - name: Configure CMake for Android
+        run: |
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_BUILD_TYPE=Release
+
+      # 3. 编译
+      - name: Build
+        run: cmake --build build --config Release
+
+      # 4. 上传产物（编译出的可执行文件）
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SilkCasket-Android-arm64
+          path: build/
