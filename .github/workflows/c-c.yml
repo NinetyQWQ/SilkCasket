@@ -1,0 +1,36 @@
+name: CMake Build & Upload
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    # 支持多平台，这里仅使用 ubuntu，需要 Windows/macOS 可自行添加 matrix
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取代码
+      - uses: actions/checkout@v4
+
+      # 2. 配置 CMake（生成构建文件到 build 目录）
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      # 3. 编译项目
+      - name: Build
+        run: cmake --build build --config Release
+
+      # 4. 可选：运行测试（如果项目有测试）
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+        continue-on-error: true   # 即使测试失败，仍继续上传产物
+
+      # 5. 上传编译产物（将 build 目录打包为可下载的 .zip）
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SilkCasket-build   # 下载后的压缩包名称
+          path: build/             # 要上传的文件夹（可执行文件通常在其中）
